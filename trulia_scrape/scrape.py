@@ -130,8 +130,7 @@ def main(document: Optional[Path] = None):
     return listing_features
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     listings = main()
     write_listings(listings)
-
 
