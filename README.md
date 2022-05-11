@@ -1,4 +1,9 @@
+# Scrape Trulia for real estate
+
+Scrapes the hard-coded Trulia query for new listings and uploads to Notion for review.
+
 ## Notion database ID
+
 92ec2168f53d481d81baa34962bb3ea6
 
 ## Trulia query url
