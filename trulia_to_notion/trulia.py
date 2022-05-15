@@ -2,15 +2,12 @@ import json
 import logging
 import re
 from pathlib import Path
-from random import randint
-from time import sleep
 from typing import Dict, List, Mapping, Optional, Union
 
-import requests
 from bs4 import BeautifulSoup
 
-from trulia_to_notion.constants import SCRAPE_HEADERS
 from trulia_to_notion.features import feature_parser
+from trulia_to_notion.util import random_request
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +139,7 @@ class TruliaConnection:
     def get_document(url: str):
         """Get HTML document from query url. Returns bs4 html-parsed document"""
         logger.info(f"Retrieving: {url=}")
-        response = requests.get(url, headers=SCRAPE_HEADERS)
+        response = random_request(url, "get", delay=True)
         response.raise_for_status()
         document = BeautifulSoup(response.text, "html.parser")
         return document
@@ -171,7 +168,6 @@ class TruliaConnection:
         listings = []
         for listing_link in listing_links[:max_listings]:
             try:
-                sleep(randint(1, 10))  # Workaround bot blocking
                 listings.append(Listing(self.get_document(listing_link), listing_link))
             except Exception:
                 logger.error(
