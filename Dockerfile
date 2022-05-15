@@ -1,8 +1,8 @@
 FROM python:3.10-slim-bullseye
 
-COPY . /opt/trulia_scrape
+COPY . /opt/trulia_to_notion
 
-ENV PYTHONPATH ${PYTHONPATH}:/opt/trulia_scrape
-RUN pip install -r /opt/trulia_scrape/requirements.txt
+ENV PYTHONPATH ${PYTHONPATH}:/opt/trulia_to_notion
+RUN pip install -r /opt/trulia_to_notion/requirements.txt
 
-ENTRYPOINT ["python", "/opt/trulia_scrape/trulia_scrape/scrape.py"]
+ENTRYPOINT ["python", "/opt/trulia_to_notion/trulia_to_notion/main.py"]
