@@ -136,9 +136,11 @@ class NotionRealEstateDB:
             ),
             headers=NOTION_HEADERS,
         )
-        results = response.json()["results"]
-        if results:
-            return results[0]["id"]
+        response.raise_for_status()
+        if "results" in response.json():
+            results = response.json()["results"]
+            if results:
+                return results[0]["id"]
         return None
 
     def _update_existing_listing(self, listing_features: Dict, page_id: str):
