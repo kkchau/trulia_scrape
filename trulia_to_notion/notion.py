@@ -122,8 +122,8 @@ class NotionRealEstateDB:
             "children": children,
         }
 
-    def _get_existing_listing(self, address: str) -> Optional[str]:
-        """Check that listing exists in database"""
+    def _get_existing_listing(self, address: str, list_price: float) -> Optional[str]:
+        """Check that listing exists in database. Assumes 'Address' is unique."""
         response = requests.post(
             f"{self.database_url}/query",
             data=json.dumps(
@@ -142,6 +142,15 @@ class NotionRealEstateDB:
         return None
 
     def _update_existing_listing(self, listing_features: Dict, page_id: str):
+
+        # Only update page if listing price changed
+        response = requests.get(f"{self.page_url}/{page_id}", headers=NOTION_HEADERS)
+        existing_list_price = float(
+            response.json().get("properties").get("Listing Price").get("number")
+        )
+        if existing_list_price == float(listing_features["list_price"]):
+            logger.info("Unchanged listing, won't update")
+            return
 
         # Make update payload
         payload = self._make_listing_payload(listing_features)
@@ -186,7 +195,9 @@ class NotionRealEstateDB:
         """
         Adds a listing to the database. If the listing exists, updates that listing
         """
-        existing_listing = self._get_existing_listing(listing.features["address"])
+        existing_listing = self._get_existing_listing(
+            listing.features["address"], float(listing.features["list_price"])
+        )
         if existing_listing:
             logger.info(f"Found existing listing with page id {existing_listing}")
             self._update_existing_listing(listing.features, existing_listing)
