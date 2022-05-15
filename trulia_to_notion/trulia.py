@@ -16,6 +16,14 @@ logger = logging.getLogger(__name__)
 
 
 class Listing:
+    RE_ADDRESS = re.compile(
+        r"^(?P<HOUSE_NUMBER>\d+) "
+        r"(?P<STREET>[\w\s]+), "
+        r"(?P<CITY>[\w\s]+), "
+        r"(?P<STATE>\w{2}) "
+        r"(?P<ZIP_CODE>\d+)$"
+    )
+
     def __init__(self, document: BeautifulSoup, link: Optional[str] = None):
         self._features = self.parse_listing(document, link)
 
@@ -38,8 +46,7 @@ class Listing:
         )
         return {"list_price": list_price}
 
-    @staticmethod
-    def _get_listing_description(document):
+    def _get_listing_description(self, document):
         """Address and text description"""
         property_description = json.loads(
             document.find(
@@ -47,8 +54,16 @@ class Listing:
             ).text
         )
 
+        # Parse address
+        address = property_description.get("name")
+        matched_address = self.RE_ADDRESS.match(address).groupdict()
+
         return {
-            "address": property_description.get("name"),
+            "address": address,
+            "street_address": f"{matched_address.get('HOUSE_NUMBER', '')} {matched_address.get('STREET', '')}",
+            "city": matched_address.get("CITY"),
+            "state": matched_address.get("STATE"),
+            "zip_code": matched_address.get("ZIP_CODE"),
             "property_description": property_description.get("description"),
         }
 

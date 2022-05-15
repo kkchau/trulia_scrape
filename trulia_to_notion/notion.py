@@ -89,6 +89,10 @@ class NotionRealEstateDB:
         properties = {
             "Link": _url_property(features["link"]),
             "Address": _rich_text_property(features["address"]),
+            "Street Address": _rich_text_property(features["street_address"]),
+            "City": _rich_text_property(features["city"]),
+            "State": _rich_text_property(features["state"]),
+            "Zip Code": _numeric_property(int(features["zip_code"])),
             "Listing Price": _numeric_property(features["list_price"]),
             "Beds": _numeric_property(features["beds"]),
             "Baths": _numeric_property(
@@ -153,6 +157,7 @@ class NotionRealEstateDB:
             headers=NOTION_HEADERS,
             data=json.dumps({"properties": payload_properties}),
         )
+        response.raise_for_status()
 
         logger.info("Deleting child blocks")
         child_blocks = requests.get(
@@ -162,12 +167,12 @@ class NotionRealEstateDB:
             requests.delete(f"{self.block_url}/{block_id}", headers=NOTION_HEADERS)
 
         logger.info("Adding updated child blocks")
-        requests.patch(
+        response = requests.patch(
             f"{self.block_url}/{page_id}/children",
             headers=NOTION_HEADERS,
             data=json.dumps({"children": payload_children}),
         )
-        return response
+        response.raise_for_status()
 
     def _add_new_listing(self, listing_features: Dict):
         payload = self._make_listing_payload(listing_features)
@@ -175,7 +180,7 @@ class NotionRealEstateDB:
         response = requests.post(
             f"{self.page_url}", headers=NOTION_HEADERS, data=json.dumps(payload)
         )
-        return response
+        response.raise_for_status()
 
     def add_listing(self, listing: Listing):
         """
@@ -184,7 +189,7 @@ class NotionRealEstateDB:
         existing_listing = self._get_existing_listing(listing.features["address"])
         if existing_listing:
             logger.info(f"Found existing listing with page id {existing_listing}")
-            response = self._update_existing_listing(listing.features, existing_listing)
+            self._update_existing_listing(listing.features, existing_listing)
         else:
             logger.info(f"Creating new listing for {listing.features['link']}")
-            response = self._add_new_listing(listing.features)
+            self._add_new_listing(listing.features)
