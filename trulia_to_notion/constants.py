@@ -18,9 +18,9 @@ SCRAPE_HEADERS = {
 
 # Notion
 NOTION_BASE_URL = "https://api.notion.com/v1"
-NOTION_AUTH_TOKEN = os.getenv("NOTION_API_TOKEN")
+NOTION_API_TOKEN = os.getenv("NOTION_API_TOKEN")
 NOTION_HEADERS = {
-    "Authorization": f"Bearer {NOTION_AUTH_TOKEN}",
+    "Authorization": f"Bearer {NOTION_API_TOKEN}",
     "Accept": "application/json",
     "Content-Type": "application/json",
     "Notion-Version": "2022-02-22",
