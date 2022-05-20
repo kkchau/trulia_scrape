@@ -43,6 +43,12 @@ class NotionRealEstateDB:
         response = requests.get(endpoint, headers=NOTION_HEADERS)
         return response
 
+    def get_pages(self):
+        """Retrieves database pages from Notion"""
+        endpoint = f"{self.base_url}/databases/{self.database_id}/query"
+        response = requests.post(endpoint, headers=NOTION_HEADERS)
+        return response
+
     @staticmethod
     def _paragraph_block(content: str):
         return {
