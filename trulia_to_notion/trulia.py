@@ -156,7 +156,7 @@ class TruliaConnection:
         return listing_links
 
     def get_listings(self, query_url: str, max_listings: int):
-
+        """Get listings from Trulia query URL"""
         if self.query_document:
             with open(self.query_document, "r") as query_document_fh:
                 search_document = BeautifulSoup(query_document_fh, "html.parser")
