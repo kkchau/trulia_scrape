@@ -27,3 +27,16 @@ NOTION_HEADERS = {
 }
 
 NOTION_DATABASE_ID = "92ec2168f53d481d81baa34962bb3ea6"
+
+# ML
+FEATURES = (
+    "Listing Price",
+    "Beds",
+    "Baths",
+    "Garage Spaces",
+    "Size (sq. ft.)",
+    "Lot Size (sq. ft.)",
+    "Zip Code",
+)
+SELECTOR_FIELD = "Like"
+PREDICTOR_FIELD = "Prediction"

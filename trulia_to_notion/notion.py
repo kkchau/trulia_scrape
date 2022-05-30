@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Dict, Optional, Sequence, Union
 
+import pandas as pd
 import requests
 
 from trulia_to_notion.constants import NOTION_HEADERS
@@ -43,11 +44,30 @@ class NotionRealEstateDB:
         response = requests.get(endpoint, headers=NOTION_HEADERS)
         return response
 
-    def get_pages(self):
-        """Retrieves database pages from Notion"""
+    @staticmethod
+    def _parse_properties(properties: Dict):
+        return {
+            "Address": properties["Address"]["rich_text"][0]["text"]["content"],
+            "Listing Price": properties["Listing Price"]["number"],
+            "Beds": properties["Beds"]["number"],
+            "Baths": properties["Baths"]["number"],
+            "Garage Spaces": properties["Garage Spaces"]["number"],
+            "Size (sq. ft.)": properties["Size (sq. ft.)"]["number"],
+            "Lot Size (sq. ft.)": properties["Lot Size (sq. ft.)"]["number"],
+            "Zip Code": properties["Zip Code"]["number"],
+            "Like": properties["Like"]["checkbox"],
+        }
+
+    def get_pages(self) -> pd.DataFrame:
+        """Get all page properties from database"""
         endpoint = f"{self.base_url}/databases/{self.database_id}/query"
         response = requests.post(endpoint, headers=NOTION_HEADERS)
-        return response
+        page_properties = [
+            self._parse_properties(page.get("properties"))
+            for page in response.json().get("results")
+        ]
+        data = pd.DataFrame(page_properties)
+        return data
 
     @staticmethod
     def _paragraph_block(content: str):
@@ -74,6 +94,8 @@ class NotionRealEstateDB:
     def _make_listing_payload(self, features: Dict):
         """
         Create page creation payload
+
+        TODO: Separate this out into its own function(s) for reuse
 
         Properties:
             Address
@@ -128,7 +150,7 @@ class NotionRealEstateDB:
             "children": children,
         }
 
-    def _get_existing_listing(self, address: str, list_price: float) -> Optional[str]:
+    def get_existing_listing(self, address: str) -> Optional[str]:
         """Check that listing exists in database. Assumes 'Address' is unique."""
         response = requests.post(
             f"{self.database_url}/query",
@@ -149,7 +171,7 @@ class NotionRealEstateDB:
                 return results[0]["id"]
         return None
 
-    def _update_existing_listing(self, listing_features: Dict, page_id: str):
+    def update_existing_listing(self, listing_features: Dict, page_id: str):
 
         # Only update page if listing price changed
         response = requests.get(f"{self.page_url}/{page_id}", headers=NOTION_HEADERS)
@@ -191,7 +213,7 @@ class NotionRealEstateDB:
         )
         response.raise_for_status()
 
-    def _add_new_listing(self, listing_features: Dict):
+    def add_new_listing(self, listing_features: Dict):
         payload = self._make_listing_payload(listing_features)
         payload["parent"] = {"database_id": self.database_id}
         response = requests.post(
@@ -203,12 +225,10 @@ class NotionRealEstateDB:
         """
         Adds a listing to the database. If the listing exists, updates that listing
         """
-        existing_listing = self._get_existing_listing(
-            listing.features["address"], float(listing.features["list_price"])
-        )
+        existing_listing = self.get_existing_listing(listing.features["address"])
         if existing_listing:
             logger.info(f"Found existing listing with page id {existing_listing}")
-            self._update_existing_listing(listing.features, existing_listing)
+            self.update_existing_listing(listing.features, existing_listing)
         else:
             logger.info(f"Creating new listing for {listing.features['link']}")
-            self._add_new_listing(listing.features)
+            self.add_new_listing(listing.features)
